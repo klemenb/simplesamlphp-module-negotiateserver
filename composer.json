@@ -1,0 +1,18 @@
+{
+    "name": "klemenb/simplesamlphp-module-negotiateserver",
+    "description": "A SimpleSAMLphp module for authenticating users via Apache/IIS integrated HTTP Negotiate support.",
+    "keywords": [ "http negotiate", "kerberos", "ntlm", "simplesamlphp", "authentication" ],
+    "homepage": "https://github.com/klemenb/simplesamlphp-module-negotiateserver",
+    "license": "LGPL-2.1",
+    "type": "simplesamlphp-module",
+    "authors": [
+        {
+            "name": "Klemen Bratec",
+            "email": "klemen.bratec@gmail.com"
+        }
+    ],
+    "require": {
+        "ext-ldap": "*",
+        "simplesamlphp/composer-module-installer": "~1.0"
+    }
+}
