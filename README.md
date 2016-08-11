@@ -35,7 +35,7 @@ composer require klemenb/simplesamlphp-module-negotiateserver:dev-master
 Since we depend on web server's handling of "HTTP Negotiate" authentication, we have to manually
 add a configuration file into your SimpleSAMLphp's **www** folder or properly edit our virtual host definition.
 
-#### Apache configuration
+### Apache configuration
 
 Add the following **&lt;Location&gt;** directive to your **VirtualHost** definition:
 
@@ -77,7 +77,7 @@ in **/var/www/idp.example.com** is below:
 </VirtualHost>
 ```
 
-#### IIS configuration
+### IIS configuration
 
 Create a **web.config** file inside **www** directory of your SimpleSAMLphp installation 
 (e.g. /var/www/idp.example.com/www) with below content:
@@ -101,7 +101,7 @@ Create a **web.config** file inside **www** directory of your SimpleSAMLphp inst
 </configuration>
 ```
 
-#### Module configuration
+### Module configuration
 
 All **negotiateserver** module configuration is handled in **authsources.php**. Add below entry
 to your **$config** array inside **config/authsources.php**:
