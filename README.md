@@ -141,3 +141,39 @@ to your **$config** array inside **config/authsources.php**:
 ),
 ```
    
+### Browser configuration
+
+#### Internet Explorer
+
+Internet Explorer uses security zones for distinguishing between different types of web sites. 
+To enable integrated windows authentication for your site, you should add it to the **Trusted sites**
+security zone.
+
+Navigate to the **Security** tab under **Internet Options**, select **Trusted sites** and click **Sites** button
+to open the list.
+
+![Internet Explorer &quot;Security&quot; tab](img/ie_tab_security.png)
+
+Add the URL of your identity provider to the list and close the window.
+
+![Internet Explorer &quot;Trusted sites&quot;](img/ie_tab_trusted_sites.png)
+
+
+#### Google Chrome
+
+Google Chrome will follow Internet Explorer's settings described above.
+
+#### Mozilla Firefox
+
+To enable HTTP Negotiate authentication in Firefox, navigate to the URL **about:config** and promise to be
+careful while changing these advanced settings.
+
+![Firefox &quot;about:config&quot; promise](img/ff_config_warning.png)
+
+Search for a preference named **network.negotiate-auth.trusted-uris** and add your identity provider to the list.
+
+![Firefox &quot;about:config&quot; promise](img/ff_config_trusted_uris.png)
+
+
+
+
