@@ -15,7 +15,7 @@ SAML for authentication. A domain user logged into a workstation would not be pr
 when accessing these web services.
 
 Basic requirements for the server hosting SimpleSAMLphp:
-- Apache 2.4 with **mod_auth_kerb** or IIS 7.0+
+- Apache 2.4 with **mod_auth_kerb**/**mod_auth_gssapi** or IIS 7.0+
   (web server should be joined into a domain)
 - SimpleSAMLphp 1.14.x or newer
 
@@ -37,7 +37,9 @@ add a configuration file into your SimpleSAMLphp's **www** folder or properly ed
 
 ### Apache configuration
 
-Add the following **&lt;Location&gt;** directive to your **VirtualHost** definition:
+Add the following **&lt;Location&gt;** directive to your **VirtualHost** definition
+
+(Using **mod_auth_kerb**):
 
 ```xml
 <Location "/module.php/negotiateserver/auth.php">
@@ -46,6 +48,18 @@ Add the following **&lt;Location&gt;** directive to your **VirtualHost** definit
     Krb5Keytab /etc/httpd/conf/HTTP.idp.keytab
     KrbMethodNegotiate On
     KrbMethodK5Passwd On
+    require valid-user
+</Location>
+```
+
+(Using the more modern **mod_auth_gssapi**):
+
+```xml
+<Location "/module.php/negotiateserver/auth.php">
+    AuthName "User with domain part in upper case (ends in '.LOCAL')"
+    AuthType GSSAPI
+    GssapiBasicAuth On
+    GssapiCredStore keytab:/etc/httpd/conf/HTTP.idp.keytab
     require valid-user
 </Location>
 ```
@@ -117,11 +131,30 @@ to your **$config** array inside **config/authsources.php**:
     // Connection parameters for your Active Directory or LDAP
     // from which user attributes will be retrieved after a successful 
     // user authentication
-    'ldap.hostname' => '127.0.0.1',
+    'ldap.hostname' => ['127.0.0.1'],
     'ldap.base' => ['OU=Users,OU=Example,DC=example,DC=local'],
+
+    // if you have multiple domains
+    // you can use the REALM to do a lookup
+    // the REALM matches whatever you put after the '@' sign
+    // or before the '\' (backslash)
+    /*
+    'ldap.hostname' => [
+        'EXAMPLE.LOCAL' => 'dc01.example.local',
+        'SUB1.EXAMPLE.LOCAL' => 'dc01.sub1.example.local',
+        'SUB2.EXAMPLE.LOCAL' => 'dc01.sub2.example.local'
+    ],
+    'ldap.base' => [
+        'EXAMPLE.LOCAL' => 'dc=example,dc=local',
+        'SUB1.EXAMPLE.LOCAL' => 'dc=sub1,dc=example,dc=local',
+        'SUB2.EXAMPLE.LOCAL' => 'dc=sub2,dc=example,dc=local'
+    ],
+    */
+    
     'ldap.admin_user' => 'admin@example.local',
     'ldap.admin_password' => 'password123',
     'ldap.identifier' => 'sAMAccountName',
+    'ldap.referrals' => false,
 
     // The list of attributes to retrieve from Active Directory or LDAP
     // (leave empty to retrieve all available attributes)
