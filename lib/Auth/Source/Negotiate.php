@@ -7,7 +7,7 @@
  * @author Klemen Bratec <klemen.bratec@gmail.com>
  * @package SimpleSAMLphp
  */
-class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML_Auth_Source
+class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML\Auth\Source
 {
     protected $ldap;
 
@@ -40,14 +40,14 @@ class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML_Auth_Sourc
 
         parent::__construct($info, $config);
 
-        $config = SimpleSAML_Configuration::loadFromArray($config);
+        $config = SimpleSAML\Configuration::loadFromArray($config);
 
-        $this->ldap_hostname = $config->getString('ldap.hostname');
+        $this->ldap_hostname = $config->getArrayize('ldap.hostname');
         $this->ldap_port = $config->getString('ldap.port', 389);
         $this->ldap_timeout = $config->getString('ldap.timeout', 10);
-        $this->ldap_enableTLS = $config->getString('ldap.enableTLS', false);
-        $this->ldap_debug = $config->getString('ldap.debug', false);
-        $this->ldap_referrals = $config->getString('ldap.referrals', true);
+        $this->ldap_enableTLS = $config->getBoolean('ldap.enableTLS', false);
+        $this->ldap_debug = $config->getBoolean('ldap.debug', false);
+        $this->ldap_referrals = $config->getBoolean('ldap.referrals', true);
         $this->ldap_admin_user = $config->getString('ldap.admin_user', null);
         $this->ldap_admin_password = $config->getString('ldap.admin_password', null);
         $this->ldap_base = $config->getArrayizeString('ldap.base');
@@ -77,7 +77,7 @@ class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML_Auth_Sourc
             $this->fallback($state);
         }
 
-        $stateId = SimpleSAML_Auth_State::saveState($state, 'negotiateserver:Negotiate');
+        $stateId = SimpleSAML\Auth\State::saveState($state, 'negotiateserver:Negotiate');
 
         $returnTo = SimpleSAML\Module::getModuleURL('negotiateserver/resume.php', array(
             'State' => $stateId,
@@ -92,47 +92,63 @@ class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML_Auth_Sourc
 
         assert('FALSE');
     }
-    
+
     public static function resume()
     {
         if (!isset($_REQUEST['State'])) {
-            throw new SimpleSAML_Error_BadRequest('Missing "State" parameter.');
+            throw new SimpleSAML\Error\BadRequest('Missing "State" parameter.');
         }
 
-        $state = SimpleSAML_Auth_State::loadState($_REQUEST['State'], 'negotiateserver:Negotiate');
+        $state = SimpleSAML\Auth\State::loadState($_REQUEST['State'], 'negotiateserver:Negotiate');
 
-        $source = SimpleSAML_Auth_Source::getById($state['negotiateserver:AuthID']);
+        $source = SimpleSAML\Auth\Source::getById($state['negotiateserver:AuthID']);
 
         if ($source === NULL) {
-            throw new SimpleSAML_Error_Exception('Could not find authentication source with id '
+            throw new SimpleSAML\Error\Exception('Could not find authentication source with id '
                 . $state[self::authId]);
         }
 
         if (!($source instanceof self)) {
-            throw new SimpleSAML_Error_Exception('Authentication source type changed.');
+            throw new SimpleSAML\Error\Exception('Authentication source type changed.');
         }
 
         if (empty($state['UserIdentifier'])) {
-            throw new SimpleSAML_Error_Exception('User identifier is empty or not set.');
+            throw new SimpleSAML\Error\Exception('User identifier is empty or not set.');
         }
 
         $attributes = $source->getUserAttributes($state['UserIdentifier']);
 
         if ($attributes === NULL) {
-            throw new SimpleSAML_Error_Exception('User not authenticated after login page.');
+            throw new SimpleSAML\Error\Exception('User not authenticated after login page.');
         }
 
         $state['Attributes'] = $attributes;
 
-        SimpleSAML_Auth_Source::completeAuth($state);
+        SimpleSAML\Auth\Source::completeAuth($state);
 
         assert('FALSE');
     }
 
     private function getUserAttributes($identifier)
     {
-        $this->ldap = new SimpleSAML_Auth_LDAP(
-            $this->ldap_hostname,
+        $parts = explode('@', $identifier);
+        $domain = '';
+
+        // remove $realm from identifier and save into $domain
+        if (count($parts) > 1) {
+            $identifier = $parts[0];
+            $domain = $parts[1];
+        } else {
+            $parts = explode('\\', $identifier);
+
+            if (count($parts) > 1) {
+                $identifier = $parts[1];
+                $domain = $parts[0];
+            }
+        }
+
+        $this->ldap = new SimpleSAML\Auth\LDAP(
+            array_key_exists($domain, $this->ldap_hostname) ? $this->ldap_hostname["${domain}"] : $this->ldap_hostname[0],
             $this->ldap_enableTLS,
             $this->ldap_debug,
             $this->ldap_timeout,
@@ -140,22 +156,13 @@ class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML_Auth_Sourc
             $this->ldap_referrals
         );
 
-        $parts = explode('@', $identifier);
-
-        // Try to cleanup user realm...
-        if (count($parts) > 1) {
-            $identifier = $parts[0];
-        } else {
-            $parts = explode('\\', $identifier);
-
-            if (count($parts) > 1) {
-                $identifier = $parts[1];
-            }
-        }
-
         $this->bindLdapAdmin();
 
-        $dn = $this->ldap->searchfordn($this->ldap_base, $this->ldap_identifier, $identifier);
+        $dn = $this->ldap->searchfordn(
+            array_key_exists($domain, $this->ldap_base) ? $this->ldap_base["${domain}"] : $this->ldap_base,
+            $this->ldap_identifier,
+            $identifier
+        );
 
         return $this->ldap->getAttributes($dn, $this->attributes);
     }
@@ -167,7 +174,7 @@ class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML_Auth_Sourc
         }
 
         if (!$this->ldap->bind($this->ldap_admin_user, $this->ldap_admin_password)) {
-            throw new SimpleSAML_Error_Exception('LDAP admin bind failed.');
+            throw new SimpleSAML\Error\Exception('LDAP admin bind failed.');
         }
     }
 
@@ -223,18 +230,18 @@ class sspmod_negotiateserver_Auth_Source_Negotiate extends SimpleSAML_Auth_Sourc
         $authId = $state['negotiateserver:AuthFallback'];
 
         if ($authId === null) {
-            throw new SimpleSAML_Error_Error(500, "Unable to determine fallback auth source.");
+            throw new SimpleSAML\Error\Error(500, "Unable to determine fallback auth source.");
         }
 
-        $source = SimpleSAML_Auth_Source::getById($authId);
+        $source = SimpleSAML\Auth\Source::getById($authId);
 
         try {
             $source->authenticate($state);
-        } catch (SimpleSAML_Error_Exception $e) {
-            SimpleSAML_Auth_State::throwException($state, $e);
+        } catch (SimpleSAML\Error\Exception $e) {
+            SimpleSAML\Auth\State::throwException($state, $e);
         } catch (Exception $e) {
-            $e = new SimpleSAML_Error_UnserializableException($e);
-            SimpleSAML_Auth_State::throwException($state, $e);
+            $e = new SimpleSAML\Error\UnserializableException($e);
+            SimpleSAML\Auth\State::throwException($state, $e);
         }
 
         SimpleSAML\Logger::debug('Negotiate Server: fallback auth source returned');

@@ -7,7 +7,7 @@
  * @package SimpleSAMLphp
  */
 
-$state = SimpleSAML_Auth_State::loadState($_REQUEST['State'], 'negotiateserver:Negotiate');
+$state = SimpleSAML\Auth\State::loadState($_REQUEST['State'], 'negotiateserver:Negotiate');
 SimpleSAML\Logger::debug('Negotiate Server: initiating fallback auth source');
 
 sspmod_negotiateserver_Auth_Source_Negotiate::fallback($state);
